@@ -1,1 +1,388 @@
-# tanchishe.github.io
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>简易贪吃蛇</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        
+        .game-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 2.2em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        #gameCanvas {
+            border: 3px solid #34495e;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+        }
+        
+        .score-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        #score {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e74c3c;
+            background: #f8f9fa;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 2px solid #e74c3c;
+        }
+        
+        #restartBtn {
+            padding: 10px 25px;
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        #restartBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        .instructions {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 800px;
+        }
+        
+        .instructions h2 {
+            color: #f39c12;
+            border-bottom: 3px solid #f39c12;
+            padding-bottom: 12px;
+            margin-top: 0;
+            text-align: center;
+            font-size: 1.8em;
+        }
+        
+        .instructions-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .instruction-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .instruction-section h3 {
+            color: #2c3e50;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .key {
+            display: inline-block;
+            background: #34495e;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin: 0 3px;
+            font-weight: bold;
+            border: 2px solid #f39c12;
+            font-family: monospace;
+        }
+        
+        .rule-item {
+            margin: 10px 0;
+            line-height: 1.5;
+            color: #555;
+        }
+        
+        .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .tip {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 游戏区域 - 上方 -->
+    <div class="game-container">
+        <h1>🐍 贪吃蛇小游戏</h1>
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <div class="score-area">
+            <div id="score">得分: 0</div>
+            <button id="restartBtn">🔄 重新开始游戏</button>
+        </div>
+    </div>
+    
+    <!-- 说明区域 - 下方 -->
+    <div class="instructions">
+        <h2>🎮 游戏玩法说明</h2>
+        <div class="instructions-content">
+            <div class="instruction-section">
+                <h3>🕹️ 控制方式</h3>
+                <div class="rule-item">
+                    <p>使用键盘<strong>方向键</strong>控制蛇的移动：</p>
+                    <p>↑ <span class="key">上箭头</span> - 向上移动</p>
+                    <p>↓ <span class="key">下箭头</span> - 向下移动</p>
+                    <p>← <span class="key">左箭头</span> - 向左移动</p>
+                    <p>→ <span class="key">右箭头</span> - 向右移动</p>
+                </div>
+            </div>
+            
+            <div class="instruction-section">
+                <h3>🎯 游戏目标</h3>
+                <div class="rule-item">
+                    <p>控制小蛇吃掉红色的<span class="highlight">食物</span>，让蛇变得越来越长！</p>
+                    <p>每吃到一个食物获得<span class="highlight">10分</span>，挑战最高分！</p>
+                </div>
+            </div>
+            
+            <div class="instruction-section">
+                <h3>⚠️ 游戏规则</h3>
+                <div class="rule-item">
+                    <p>• 撞到墙壁 <span class="highlight">游戏结束</span></p>
+                    <p>• 撞到自己身体 <span class="highlight">游戏结束</span></p>
+                    <p>• 蛇不能反向移动（防止误操作）</p>
+                    <p>• 食物会随机出现在空白位置</p>
+                </div>
+            </div>
+            
+            <div class="instruction-section">
+                <h3>💡 高手技巧</h3>
+                <div class="rule-item">
+                    <p>• 提前规划路线，避免陷入死角</p>
+                    <p>• 利用蛇的身体来阻挡，但要小心别撞上</p>
+                    <p>• 分数越高，蛇越长，难度越大！</p>
+                    <p>• 保持耐心，稳扎稳打</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tip">
+            <strong>💪 挑战自我：</strong> 看看你能得多少分？超过100分就是高手，超过200分就是大神！
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const restartBtn = document.getElementById('restartBtn');
+
+        // 游戏参数
+        const gridSize = 20;
+        const tileCount = canvas.width / gridSize;
+
+        let snake = [
+            {x: 10, y: 10}
+        ];
+        let food = {};
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+        let gameRunning = true;
+
+        // 生成食物
+        function generateFood() {
+            food = {
+                x: Math.floor(Math.random() * tileCount),
+                y: Math.floor(Math.random() * tileCount)
+            };
+            // 确保食物不会生成在蛇身上
+            for (let segment of snake) {
+                if (segment.x === food.x && segment.y === food.y) {
+                    generateFood();
+                    return;
+                }
+            }
+        }
+
+        // 游戏主循环
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            // 移动蛇
+            const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+            snake.unshift(head);
+
+            // 检查是否吃到食物
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreElement.textContent = `得分: ${score}`;
+                // 分数颜色变化
+                if (score >= 100) {
+                    scoreElement.style.color = '#f39c12';
+                    scoreElement.style.borderColor = '#f39c12';
+                }
+                if (score >= 200) {
+                    scoreElement.style.color = '#9b59b6';
+                    scoreElement.style.borderColor = '#9b59b6';
+                }
+                generateFood();
+            } else {
+                snake.pop(); // 没吃到食物，移除尾部
+            }
+
+            // 检查游戏结束条件
+            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                gameOver();
+                return;
+            }
+
+            for (let i = 1; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    gameOver();
+                    return;
+                }
+            }
+
+            // 清空画布并重新绘制
+            ctx.fillStyle = '#ecf0f1';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制蛇（渐变效果）
+            for (let i = 0; i < snake.length; i++) {
+                const gradient = ctx.createLinearGradient(
+                    snake[i].x * gridSize, 
+                    snake[i].y * gridSize, 
+                    snake[i].x * gridSize + gridSize, 
+                    snake[i].y * gridSize + gridSize
+                );
+                
+                if (i === 0) {
+                    // 蛇头用不同颜色
+                    gradient.addColorStop(0, '#27ae60');
+                    gradient.addColorStop(1, '#2ecc71');
+                } else {
+                    gradient.addColorStop(0, '#3498db');
+                    gradient.addColorStop(1, '#2980b9');
+                }
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize - 2, gridSize - 2);
+                
+                // 蛇头眼睛
+                if (i === 0) {
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(snake[i].x * gridSize + 4, snake[i].y * gridSize + 4, 3, 3);
+                    ctx.fillRect(snake[i].x * gridSize + 12, snake[i].y * gridSize + 4, 3, 3);
+                }
+            }
+
+            // 绘制食物（苹果样式）
+            ctx.fillStyle = '#e74c3c';
+            ctx.beginPath();
+            ctx.arc(food.x * gridSize + gridSize/2, food.y * gridSize + gridSize/2, gridSize/2 - 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 食物细节
+            ctx.fillStyle = '#2c3e50';
+            ctx.fillRect(food.x * gridSize + gridSize/2 - 1, food.y * gridSize + 2, 2, 4);
+
+            // 继续循环
+            setTimeout(gameLoop, 150);
+        }
+
+        // 游戏结束
+        function gameOver() {
+            gameRunning = false;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 30px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('游戏结束!', canvas.width / 2, canvas.height / 2 - 20);
+            
+            ctx.font = '20px Arial';
+            ctx.fillText(`最终得分: ${score}`, canvas.width / 2, canvas.height / 2 + 20);
+            
+            if (score >= 100) {
+                ctx.fillText('🎉 恭喜你，已经是高手了！', canvas.width / 2, canvas.height / 2 + 50);
+            }
+        }
+
+        // 重新开始游戏
+        function restartGame() {
+            snake = [{x: 10, y: 10}];
+            dx = 0;
+            dy = 0;
+            score = 0;
+            scoreElement.textContent = `得分: ${score}`;
+            scoreElement.style.color = '#e74c3c';
+            scoreElement.style.borderColor = '#e74c3c';
+            gameRunning = true;
+            generateFood();
+            gameLoop();
+        }
+
+        // 键盘控制
+        document.addEventListener('keydown', e => {
+            if (!gameRunning) return;
+
+            // 防止反向移动
+            switch(e.key) {
+                case 'ArrowUp':
+                    if (dy !== 1) { dx = 0; dy = -1; }
+                    break;
+                case 'ArrowDown':
+                    if (dy !== -1) { dx = 0; dy = 1; }
+                    break;
+                case 'ArrowLeft':
+                    if (dx !== 1) { dx = -1; dy = 0; }
+                    break;
+                case 'ArrowRight':
+                    if (dx !== -1) { dx = 1; dy = 0; }
+                    break;
+            }
+        });
+
+        restartBtn.addEventListener('click', restartGame);
+
+        // 初始化游戏
+        generateFood();
+        gameLoop();
+    </script>
+</body>
+</html>
